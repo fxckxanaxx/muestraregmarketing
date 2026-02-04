@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crear Orden de Producción - REG Marketing</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .upload-area {
+            border: 3px dashed #2196F3;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+        
+        .upload-area:hover {
+            background: #e3f2fd;
+            border-color: #1976D2;
+        }
+        
+        .upload-area.has-image {
+            border-style: solid;
+            border-color: #4CAF50;
+            background: #f1f8f4;
+        }
+        
+        .image-preview {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 10px;
+            margin-top: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .tabla-tallas {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        .tabla-tallas th,
+        .tabla-tallas td {
+            border: 2px solid #2196F3;
+            padding: 12px 8px;
+            text-align: center;
+        }
+        
+        .tabla-tallas th {
+            background: #2196F3;
+            color: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .tabla-tallas input {
+            width: 60px;
+            text-align: center;
+            border: 1px solid #ddd;
+            padding: 8px 5px;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        
+        .tabla-tallas input:focus {
+            border-color: #2196F3;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+        }
+        
+        .tabla-tallas .total-cell {
+            background: #e3f2fd;
+            font-weight: bold;
+            color: #2196F3;
+            font-size: 1.3rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <img src="logo.png" alt="Logo" style="height: 60px;" onerror="this.style.display='none'">
+            </div>
+            <h1>REG MARKETING</h1>
+            <div class="company-name">S.A.S</div>
+            <p>Crear Orden de Producción</p>
+        </header>
+
+        <div class="main-content" style="grid-template-columns: 1fr; max-width: 1000px; margin: 0 auto;">
+            <div class="section">
+                <h2 class="section-title">
+                    <i class="fas fa-file-alt"></i>
+                    Nueva Orden de Producción
+                </h2>
+
+                <form id="ordenForm">
+                    <!-- INFORMACIÓN DEL CLIENTE -->
+                    <div style="background: #e3f2fd; padding: 20px; border-radius: 12px; margin-bottom: 25px; border-left: 5px solid #2196F3;">
+                        <h3 style="color: #2196F3; margin-bottom: 15px;">
+                            <i class="fas fa-user"></i> Información del Cliente
+                        </h3>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="numeroOrden">Número de Orden *</label>
+                                <input type="text" id="numeroOrden" required placeholder="Ej: 001">
+                            </div>
+                            <div class="form-group">
+                                <label for="cliente">Cliente *</label>
+                                <input type="text" id="cliente" required placeholder="Nombre del cliente">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="fechaPedido">Fecha de Pedido *</label>
+                                <input type="date" id="fechaPedido" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="fechaEntrega">Fecha de Entrega *</label>
+                                <input type="date" id="fechaEntrega" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="arte">Arte / Diseño *</label>
+                                <input type="text" id="arte" required placeholder="Nombre del diseño">
+                            </div>
+                            <div class="form-group">
+                                <label for="impresora">Impresora</label>
+                                <select id="impresora">
+                                    <option value="">Seleccionar...</option>
+                                    <option value="EPSON">EPSON</option>
+                                    <option value="ROLAND">ROLAND</option>
+                                    <option value="MIMAKI">MIMAKI</option>
+                                    <option value="OTRA">OTRA</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ESPECIFICACIONES TÉCNICAS -->
+                    <div style="background: #f3e5f5; padding: 20px; border-radius: 12px; margin-bottom: 25px; border-left: 5px solid #9C27B0;">
+                        <h3 style="color: #9C27B0; margin-bottom: 15px;">
+                            <i class="fas fa-cog"></i> Especificaciones Técnicas
+                        </h3>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="tipoPrenda">Tipo de Prenda *</label>
+                                <input type="text" id="tipoPrenda" required placeholder="Ej: Camisetas">
+                            </div>
+                            <div class="form-group">
+                                <label for="tela">Tela *</label>
+                                <select id="tela" required>
+                                    <option value="">Seleccionar...</option>
+                                    <option value="HW">HW</option>
+                                    <option value="Pique">Pique</option>
+                                    <option value="Jersey">Jersey</option>
+                                    <option value="Microfibra">Microfibra</option>
+                                    <option value="Otra">Otra</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="cuello">Tipo de Cuello *</label>
+                                <select id="cuello" required>
+                                    <option value="">Seleccionar...</option>
+                                    <option value="Redondo">Redondo</option>
+                                    <option value="V">En V</option>
+                                    <option value="Sublimado">Sublimado</option>
+                                    <option value="Polo">Polo</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="colorCuello">Color de Cuello</label>
+                                <input type="text" id="colorCuello" placeholder="Ej: Blanco">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="marquilla">Marquilla</label>
+                                <select id="marquilla">
+                                    <option value="OTRO">OTRO</option>
+                                    <option value="REG">REG</option>
+                                    <option value="Sin marquilla">Sin marquilla</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="descripcion">Descripción</label>
+                                <input type="text" id="descripcion" placeholder="Descripción breve">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- DISEÑO / IMAGEN -->
+                    <div style="background: #fff3e0; padding: 20px; border-radius: 12px; margin-bottom: 25px; border-left: 5px solid #FF9800;">
+                        <h3 style="color: #FF9800; margin-bottom: 15px;">
+                            <i class="fas fa-image"></i> Diseño del Producto
+                        </h3>
+                        
+                        <div class="upload-area" id="uploadArea" onclick="document.getElementById('imagenProducto').click()">
+                            <i class="fas fa-cloud-upload-alt" style="font-size: 3rem; color: #2196F3; margin-bottom: 15px;"></i>
+                            <p style="font-size: 1.1rem; color: #666; margin-bottom: 10px;">
+                                <strong>Click para subir imagen del diseño</strong>
+                            </p>
+                            <p style="font-size: 0.9rem; color: #999;">
+                                Formatos: JPG, PNG, GIF (máx 5MB)
+                            </p>
+                            <input type="file" id="imagenProducto" accept="image/*" style="display: none;">
+                            <div id="imagePreview"></div>
+                        </div>
+                    </div>
+
+                    <!-- TABLA DE TALLAS -->
+                    <div style="background: #e8f5e9; padding: 20px; border-radius: 12px; margin-bottom: 25px; border-left: 5px solid #4CAF50;">
+                        <h3 style="color: #4CAF50; margin-bottom: 15px;">
+                            <i class="fas fa-ruler"></i> Cantidades por Talla
+                        </h3>
+                        
+                        <table class="tabla-tallas">
+                            <thead>
+                                <tr>
+                                    <th>8</th>
+                                    <th>12</th>
+                                    <th>16</th>
+                                    <th>XS</th>
+                                    <th>S</th>
+                                    <th>M</th>
+                                    <th>L</th>
+                                    <th>XL</th>
+                                    <th>2XL</th>
+                                    <th>3XL</th>
+                                    <th>TOTAL</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><input type="number" id="talla8" min="0" value="0" class="talla-input"></td>
+                                    <td><input type="number" id="talla12" min="0" value="0" class="talla-input"></td>
+                                    <td><input type="number" id="talla16" min="0" value="0" class="talla-input"></td>
+                                    <td><input type="number" id="tallaXS" min="0" value="0" class="talla-input"></td>
+                                    <td><input type="number" id="tallaS" min="0" value="0" class="talla-input"></td>
+                                    <td><input type="number" id="tallaM" min="0" value="0" class="talla-input"></td>
+                                    <td><input type="number" id="tallaL" min="0" value="0" class="talla-input"></td>
+                                    <td><input type="number" id="tallaXL" min="0" value="0" class="talla-input"></td>
+                                    <td><input type="number" id="talla2XL" min="0" value="0" class="talla-input"></td>
+                                    <td><input type="number" id="talla3XL" min="0" value="0" class="talla-input"></td>
+                                    <td class="total-cell" id="totalPrendas">0</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- OBSERVACIONES -->
+                    <div class="form-group">
+                        <label for="observaciones">Observaciones / Notas Adicionales</label>
+                        <textarea id="observaciones" placeholder="Características especiales, detalles importantes..." rows="4"></textarea>
+                    </div>
+
+                    <!-- BOTONES -->
+                    <div style="display: flex; gap: 15px; margin-top: 30px;">
+                        <button type="submit" class="btn btn-primary" style="flex: 1;">
+                            <i class="fas fa-save"></i> Crear Orden de Producción
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="limpiarFormulario()" style="flex: 0.3;">
+                            <i class="fas fa-eraser"></i> Limpiar
+                        </button>
+                    </div>
+                </form>
+
+                <!-- NAVEGACIÓN -->
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #f0f0f0; text-align: center;">
+                    <p style="color: #666; margin-bottom: 15px;">Ver otras secciones:</p>
+                    <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                        <a href="dashboard-jefe.html" class="btn btn-primary" style="text-decoration: none;">
+                            <i class="fas fa-tv"></i> Dashboard Jefe
+                        </a>
+                        <a href="tablet-areas.html" class="btn btn-success" style="text-decoration: none;">
+                            <i class="fas fa-tablet-alt"></i> Tablets Áreas
+                        </a>
+                        <a href="index.html" class="btn btn-secondary" style="text-decoration: none;">
+                            <i class="fas fa-home"></i> Inicio
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let imagenBase64 = null;    
+
+        // Calcular total de prendas
+        document.querySelectorAll('.talla-input').forEach(input => {
+            input.addEventListener('input', calcularTotal);
+        });
+                // Verificar si estamos editando
+        const urlParams = new URLSearchParams(window.location.search);
+        const numeroOrdenEditar = urlParams.get('editar');
+
+        if (numeroOrdenEditar) {
+            // Cargar datos de la orden para editar
+            window.addEventListener('DOMContentLoaded', function() {
+                const ordenes = JSON.parse(localStorage.getItem('ordenes') || '[]');
+                const orden = ordenes.find(o => o.numeroOrden === numeroOrdenEditar);
+                
+                if (orden) {
+                    // Llenar el formulario con los datos existentes
+                    document.getElementById('numeroOrden').value = orden.numeroOrden;
+                    document.getElementById('numeroOrden').readOnly = true;
+                    document.getElementById('cliente').value = orden.cliente;
+                    document.getElementById('fechaPedido').value = orden.fechaPedido;
+                    document.getElementById('fechaEntrega').value = orden.fechaEntrega;
+                    document.getElementById('arte').value = orden.arte || '';
+                    document.getElementById('impresora').value = orden.impresora || '';
+                    document.getElementById('tipoPrenda').value = orden.tipoPrenda;
+                    document.getElementById('tela').value = orden.tela || '';
+                    document.getElementById('cuello').value = orden.cuello;
+                    document.getElementById('colorCuello').value = orden.colorCuello || '';
+                    document.getElementById('marquilla').value = orden.marquilla || '';
+                    document.getElementById('observaciones').value = orden.observaciones || '';
+                    
+                    // Llenar tallas
+                    Object.keys(orden.tallas).forEach(talla => {
+                        const input = document.getElementById('talla' + talla);
+                        if (input) {
+                            input.value = orden.tallas[talla];
+                        }
+                    });
+                    
+                    calcularTotal();
+                    
+                    // Cambiar el texto del botón
+                    const btnGuardar = document.querySelector('button[type="submit"]');
+                    btnGuardar.innerHTML = '<i class="fas fa-save"></i> Actualizar Orden';
+                    
+                    // Mostrar notificación
+                    setTimeout(() => {
+                        const notif = document.createElement('div');
+                        notif.className = 'notification info';
+                        notif.textContent = `📝 Editando orden ${numeroOrdenEditar}`;
+                        document.body.appendChild(notif);
+                        
+                        setTimeout(() => {
+                            notif.style.animation = 'slideOut 0.3s ease';
+                            setTimeout(() => notif.remove(), 300);
+                        }, 3000);
+                    }, 500);
+                }
+            });
+        }
+        function calcularTotal() {
+            let total = 0;
+            document.querySelectorAll('.talla-input').forEach(input => {
+                total += parseInt(input.value) || 0;
+            });
+            document.getElementById('totalPrendas').textContent = total;
+        }
+
+        // Establecer fecha mínima y fecha de pedido actual
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('fechaPedido').value = today;
+        document.getElementById('fechaEntrega').min = today;
+
+        // Manejar subida de imagen
+        document.getElementById('imagenProducto').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('⚠️ La imagen es muy grande. Máximo 5MB');
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    imagenBase64 = event.target.result;
+                    const uploadArea = document.getElementById('uploadArea');
+                    const preview = document.getElementById('imagePreview');
+                    
+                    uploadArea.classList.add('has-image');
+                    preview.innerHTML = `
+                        <img src="${imagenBase64}" class="image-preview" alt="Preview">
+                        <p style="margin-top: 10px; color: #4CAF50; font-weight: 600;">
+                            <i class="fas fa-check-circle"></i> Imagen cargada: ${file.name}
+                        </p>
+                    `;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Manejar envío del formulario
+        document.getElementById('ordenForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const total = parseInt(document.getElementById('totalPrendas').textContent);
+            if (total === 0) {
+                alert('⚠️ Debes especificar al menos una cantidad en las tallas');
+                return;
+            }
+
+            const orden = {
+                numeroOrden: document.getElementById('numeroOrden').value,
+                cliente: document.getElementById('cliente').value,
+                fechaPedido: document.getElementById('fechaPedido').value,
+                fechaEntrega: document.getElementById('fechaEntrega').value,
+                arte: document.getElementById('arte').value,
+                impresora: document.getElementById('impresora').value,
+                tipoPrenda: document.getElementById('tipoPrenda').value,
+                tela: document.getElementById('tela').value,
+                cuello: document.getElementById('cuello').value,
+                colorCuello: document.getElementById('colorCuello').value,
+                marquilla: document.getElementById('marquilla').value,
+                descripcion: document.getElementById('descripcion').value,
+                imagenDiseno: imagenBase64,
+                tallas: {
+                    '8': parseInt(document.getElementById('talla8').value) || 0,
+                    '12': parseInt(document.getElementById('talla12').value) || 0,
+                    '16': parseInt(document.getElementById('talla16').value) || 0,
+                    'XS': parseInt(document.getElementById('tallaXS').value) || 0,
+                    'S': parseInt(document.getElementById('tallaS').value) || 0,
+                    'M': parseInt(document.getElementById('tallaM').value) || 0,
+                    'L': parseInt(document.getElementById('tallaL').value) || 0,
+                    'XL': parseInt(document.getElementById('tallaXL').value) || 0,
+                    '2XL': parseInt(document.getElementById('talla2XL').value) || 0,
+                    '3XL': parseInt(document.getElementById('talla3XL').value) || 0
+                },
+                observaciones: document.getElementById('observaciones').value,
+                fechaCreacion: new Date().toISOString(),
+                estado: {
+                    corte: 'pendiente',
+                    confeccion: 'pendiente',
+                    impresion: 'pendiente',
+                    sublimacion: 'pendiente',
+                    despacho: 'pendiente'
+                }
+            };
+
+            // Guardar en localStorage
+            let ordenes = JSON.parse(localStorage.getItem('ordenes') || '[]');
+            ordenes.push(orden);
+            localStorage.setItem('ordenes', JSON.stringify(ordenes));
+
+            // Notificación
+            mostrarNotificacion('✅ Orden creada exitosamente: ' + orden.numeroOrden, 'success');
+            
+            // Limpiar formulario
+            setTimeout(() => {
+                limpiarFormulario();
+            }, 1500);
+        });
+
+        function limpiarFormulario() {
+            document.getElementById('ordenForm').reset();
+            document.querySelectorAll('.talla-input').forEach(input => {
+                input.value = 0;
+            });
+            calcularTotal();
+            imagenBase64 = null;
+            document.getElementById('uploadArea').classList.remove('has-image');
+            document.getElementById('imagePreview').innerHTML = '';
+            document.getElementById('fechaPedido').value = today;
+        }
+
+        function mostrarNotificacion(mensaje, tipo) {
+            const notif = document.createElement('div');
+            notif.className = `notification ${tipo}`;
+            notif.textContent = mensaje;
+            document.body.appendChild(notif);
+            
+            setTimeout(() => {
+                notif.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => notif.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

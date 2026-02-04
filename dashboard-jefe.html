@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Jefe - REG Marketing</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+        }
+        
+        .dashboard-container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        .kpi-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .kpi-box {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            border-top: 4px solid;
+        }
+        
+        .kpi-box.blue { border-top-color: #2196F3; }
+        .kpi-box.orange { border-top-color: #FF9800; }
+        .kpi-box.green { border-top-color: #4CAF50; }
+        .kpi-box.purple { border-top-color: #9C27B0; }
+        
+        .kpi-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .kpi-box.blue .kpi-value { color: #2196F3; }
+        .kpi-box.orange .kpi-value { color: #FF9800; }
+        .kpi-box.green .kpi-value { color: #4CAF50; }
+        .kpi-box.purple .kpi-value { color: #9C27B0; }
+        
+        .kpi-label {
+            font-size: 0.9rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .section-title-dashboard {
+            color: white;
+            font-size: 1.8rem;
+            margin: 30px 0 20px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .orden-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            transition: transform 0.3s ease;
+        }
+
+        .orden-imagen-preview {
+            width: 120px;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 12px;
+            border: 3px solid #2196F3;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .orden-imagen-preview:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4);
+        }
+
+        .orden-header-content {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .orden-info-text {
+            flex: 1;
+        }
+
+        .orden-detalles-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .detalle-item-dashboard {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .detalle-label-dashboard {
+            font-size: 0.85rem;
+            color: #666;
+            font-weight: 600;
+        }
+
+        .detalle-value-dashboard {
+            font-size: 1rem;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        .orden-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .orden-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .orden-numero {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #2196F3;
+        }
+        
+        .orden-cliente {
+            font-size: 1.2rem;
+            color: #333;
+        }
+        
+        .proceso-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            margin-top: 15px;
+        }
+        
+        .proceso-item {
+            text-align: center;
+            padding: 15px 10px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .proceso-item.pendiente {
+            background: #ffebee;
+            border: 2px solid #f44336;
+        }
+        
+        .proceso-item.en-proceso {
+            background: #fff3e0;
+            border: 2px solid #FF9800;
+        }
+        
+        .proceso-item.completado {
+            background: #e8f5e9;
+            border: 2px solid #4CAF50;
+        }
+        
+        .proceso-icon {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+        }
+        
+        .proceso-item.pendiente .proceso-icon { color: #f44336; }
+        .proceso-item.en-proceso .proceso-icon { color: #FF9800; }
+        .proceso-item.completado .proceso-icon { color: #4CAF50; }
+        
+        .proceso-nombre {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .proceso-estado {
+            font-size: 0.75rem;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .orden-info {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 10px;
+        }
+        
+        .orden-info-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .auto-refresh {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            font-size: 0.9rem;
+            color: #4CAF50;
+            animation: pulse 2s infinite;
+            z-index: 1000;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px;
+            background: white;
+            border-radius: 15px;
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            color: #ccc;
+            margin-bottom: 20px;
+        }
+        
+        .empty-state h3 {
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+
+        .login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .login-box h2 {
+            color: #2196F3;
+            margin-bottom: 10px;
+            font-size: 1.8rem;
+        }
+
+        .login-box p {
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            text-align: center;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .login-input:focus {
+            outline: none;
+            border-color: #2196F3;
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+        }
+
+        .login-error {
+            color: #f44336;
+            margin-top: 10px;
+            font-weight: 600;
+            display: none;
+        }
+
+        .login-logo {
+            width: 100px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+        <!-- LOGIN OVERLAY -->
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-box">
+            <img src="logo.png" alt="Logo" class="login-logo" onerror="this.style.display='none'">
+            <h2>Dashboard del Jefe</h2>
+            <p>Ingrese la clave de acceso</p>
+            <input type="password" id="loginPassword" class="login-input" placeholder="Clave de acceso" autofocus>
+            <button class="btn btn-primary" onclick="verificarLogin()" style="width: 100%; padding: 15px;">
+                <i class="fas fa-sign-in-alt"></i> Ingresar
+            </button>
+            <p class="login-error" id="loginError">❌ Clave incorrecta</p>
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
+                <a href="index.html" style="color: #2196F3; text-decoration: none;">
+                    <i class="fas fa-arrow-left"></i> Volver al inicio
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="container dashboard-container">
+        <header class="header">
+            <div class="logo">
+                <img src="logo.png" alt="Logo" style="height: 60px;" onerror="this.style.display='none'">
+            </div>
+            <h1>REG MARKETING</h1>
+            <div class="company-name">S.A.S</div>
+            <p>Dashboard de Producción en Tiempo Real</p>
+        </header>
+
+        <!-- KPIs PRINCIPALES -->
+        <div class="kpi-stats">
+            <div class="kpi-box blue">
+                <div class="kpi-label">Órdenes Activas</div>
+                <div class="kpi-value" id="totalOrdenes">0</div>
+            </div>
+            <div class="kpi-box orange">
+                <div class="kpi-label">En Proceso</div>
+                <div class="kpi-value" id="enProceso">0</div>
+            </div>
+            <div class="kpi-box green">
+                <div class="kpi-label">Completadas</div>
+                <div class="kpi-value" id="completadas">0</div>
+            </div>
+            <div class="kpi-box purple">
+                <div class="kpi-label">Pendientes</div>
+                <div class="kpi-value" id="pendientes">0</div>
+            </div>
+        </div>
+
+        <!-- ÓRDENES DE PRODUCCIÓN -->
+        <h2 class="section-title-dashboard">
+            <i class="fas fa-clipboard-list"></i>
+            Órdenes de Producción
+        </h2>
+        <div id="listaOrdenes"></div>
+
+        <!-- NAVEGACIÓN -->
+        <!-- BOTONES DE NAVEGACIÓN MEJORADOS -->
+        <!-- FOOTER CON NAVEGACIÓN -->
+        <div style="position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 20px; box-shadow: 0 -5px 20px rgba(0,0,0,0.2); z-index: 1000;">
+            <div style="max-width: 1600px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
+                <a href="crear-orden.html" class="btn btn-primary" style="text-decoration: none; padding: 12px 20px;">
+                    <i class="fas fa-plus-circle"></i> Nueva Orden
+                </a>
+                
+                <a href="tablet-areas.html" class="btn btn-success" style="text-decoration: none; padding: 12px 20px;">
+                    <i class="fas fa-tablet-alt"></i> Tablets
+                </a>
+                
+                <button class="btn" onclick="verHistorial()" style="background: #9C27B0; color: white; padding: 12px 20px;">
+                    <i class="fas fa-history"></i> Historial
+                </button>
+                
+                <a href="index.html" class="btn btn-secondary" style="text-decoration: none; padding: 12px 20px;">
+                    <i class="fas fa-home"></i> Inicio
+                </a>
+                
+                <button class="btn btn-danger" onclick="cerrarSesion()" style="padding: 12px 20px;">
+                    <i class="fas fa-sign-out-alt"></i> Salir
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- INDICADOR DE AUTO-REFRESH -->
+    <div class="auto-refresh">
+        <i class="fas fa-sync-alt"></i> Actualización automática
+    </div>
+
+    <script>
+        function cargarOrdenes() {
+            const ordenes = JSON.parse(localStorage.getItem('ordenes') || '[]');
+            const listaOrdenes = document.getElementById('listaOrdenes');
+            
+            if (ordenes.length === 0) {
+                listaOrdenes.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <h3>No hay órdenes de producción</h3>
+                        <p>Crea la primera orden desde el formulario</p>
+                        <a href="crear-orden.html" class="btn btn-primary" style="margin-top: 20px; text-decoration: none;">
+                            <i class="fas fa-plus"></i> Crear Primera Orden
+                        </a>
+                    </div>
+                `;
+                actualizarEstadisticas(0, 0, 0, 0);
+                return;
+            }
+
+            // Calcular estadísticas
+            let totalOrdenes = ordenes.length;
+            let enProceso = 0;
+            let completadas = 0;
+            let pendientes = 0;
+
+            ordenes.forEach(orden => {
+                const estados = Object.values(orden.estado);
+                const todasCompletadas = estados.every(e => e === 'completado');
+                const algunaEnProceso = estados.some(e => e === 'en-proceso');
+                const todasPendientes = estados.every(e => e === 'pendiente');
+
+                if (todasCompletadas) {
+                    completadas++;
+                } else if (algunaEnProceso) {
+                    enProceso++;
+                } else if (todasPendientes) {
+                    pendientes++;
+                }
+            });
+
+            actualizarEstadisticas(totalOrdenes, enProceso, completadas, pendientes);
+
+            // Generar HTML de órdenes
+            listaOrdenes.innerHTML = ordenes.map(orden => {
+                const totalPrendas = Object.values(orden.tallas).reduce((sum, val) => sum + val, 0);
+                const fechaEntrega = new Date(orden.fechaEntrega).toLocaleDateString('es-ES');
+                return `
+                    <div class="orden-card" style="cursor: pointer;" onclick="verOrdenCompleta('${orden.numeroOrden}')">
+                        <div class="orden-header">
+                            <div>
+                                <div class="orden-numero">${orden.numeroOrden}</div>
+                                <div class="orden-cliente">${orden.cliente}</div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 0.9rem; color: #666;">
+                                    <i class="fas fa-calendar"></i> ${fechaEntrega}
+                                </div>
+                                <div style="font-size: 0.9rem; color: #666; margin-top: 5px;">
+                                    <i class="fas fa-tshirt"></i> ${totalPrendas} prendas
+                                </div>
+                                <button class="btn btn-primary btn-small" style="margin-top: 10px;" onclick="event.stopPropagation(); verOrdenCompleta('${orden.numeroOrden}')">
+                                    <i class="fas fa-eye"></i> Ver Detalle
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="orden-info">
+                            <div class="orden-info-item">
+                                <i class="fas fa-tag"></i>
+                                <span>${orden.tipoPrenda}</span>
+                            </div>
+                            <div class="orden-info-item">
+                                <i class="fas fa-circle-notch"></i>
+                                <span>${orden.cuello}</span>
+                            </div>
+                            ${orden.tela ? `
+                                <div class="orden-info-item">
+                                    <i class="fas fa-scroll"></i>
+                                    <span>${orden.tela}</span>
+                                </div>
+                            ` : ''}
+                        </div>
+
+                        <div class="proceso-grid">
+                            ${generarProceso('Corte', 'cut', orden.estado.corte)}
+                            ${generarProceso('Confección', 'tshirt', orden.estado.confeccion)}
+                            ${generarProceso('Impresión', 'print', orden.estado.impresion)}
+                            ${generarProceso('Sublimación', 'fill-drip', orden.estado.sublimacion)}
+                            ${generarProceso('Despacho', 'shipping-fast', orden.estado.despacho)}
+                        </div>
+                    </div>
+                `;
+                
+            }).join('');
+        }
+
+        function generarProceso(nombre, icon, estado) {
+            const estadosTexto = {
+                'pendiente': 'Pendiente',
+                'en-proceso': 'En Proceso',
+                'completado': 'Completado'
+            };
+
+            return `
+                <div class="proceso-item ${estado}">
+                    <div class="proceso-icon">
+                        <i class="fas fa-${icon}"></i>
+                    </div>
+                    <div class="proceso-nombre">${nombre}</div>
+                    <div class="proceso-estado">${estadosTexto[estado]}</div>
+                </div>
+            `;
+        }
+
+        function actualizarEstadisticas(total, proceso, completas, pend) {
+            document.getElementById('totalOrdenes').textContent = total;
+            document.getElementById('enProceso').textContent = proceso;
+            document.getElementById('completadas').textContent = completas;
+            document.getElementById('pendientes').textContent = pend;
+        }
+
+        // Cargar al inicio
+        cargarOrdenes();
+
+        // Auto-refresh cada 5 segundos
+        setInterval(cargarOrdenes, 5000);
+
+        // Notificación inicial
+        setTimeout(() => {
+            const notif = document.createElement('div');
+            notif.className = 'notification info';
+            notif.innerHTML = '<i class="fas fa-info-circle"></i> Dashboard en tiempo real activado';
+            document.body.appendChild(notif);
+            
+            setTimeout(() => {
+                notif.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => notif.remove(), 300);
+            }, 3000);
+        }, 500);
+        function verOrdenCompleta(numeroOrden) {
+            window.location.href = `ver-orden.html?orden=${numeroOrden}`;
+        }
+        // ===== SISTEMA DE LOGIN =====
+        const CLAVE_JEFE = 'jefe2025'; // Cambiar aquí la clave
+
+        function verificarLogin() {
+            const password = document.getElementById('loginPassword').value;
+            
+            if (password === CLAVE_JEFE) {
+                // Login correcto
+                localStorage.setItem('jefeAutenticado', 'true');
+                document.getElementById('loginOverlay').style.display = 'none';
+                mostrarNotificacion('✅ Acceso concedido', 'success');
+            } else {
+                // Login incorrecto
+                document.getElementById('loginError').style.display = 'block';
+                document.getElementById('loginPassword').value = '';
+                document.getElementById('loginPassword').focus();
+                
+                setTimeout(() => {
+                    document.getElementById('loginError').style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        // Permitir Enter para login
+        document.addEventListener('DOMContentLoaded', function() {
+            const loginInput = document.getElementById('loginPassword');
+            if (loginInput) {
+                loginInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        verificarLogin();
+                    }
+                });
+            }
+            
+            // Verificar si ya está autenticado
+            const autenticado = localStorage.getItem('jefeAutenticado');
+            if (autenticado === 'true') {
+                document.getElementById('loginOverlay').style.display = 'none';
+            }
+        });
+
+        // Botón de cerrar sesión (opcional)
+        function cerrarSesion() {
+            localStorage.removeItem('jefeAutenticado');
+            window.location.reload();
+        }
+        
+        function verHistorial() {
+            const historial = JSON.parse(localStorage.getItem('historialOrdenes') || '[]');
+            
+            if (historial.length === 0) {
+                mostrarNotificacion('📋 No hay órdenes completadas en el historial aún', 'info');
+                return;
+            }
+            
+            let html = `
+                <div style="background: white; padding: 30px; border-radius: 15px; max-width: 900px; margin: 0 auto;">
+                    <h2 style="color: #2196F3; margin-bottom: 20px;">
+                        <i class="fas fa-history"></i> Historial de Órdenes Completadas
+                    </h2>
+                    <p style="color: #666; margin-bottom: 30px;">Total de órdenes completadas: <strong>${historial.length}</strong></p>
+                    
+                    <div style="max-height: 500px; overflow-y: auto;">
+            `;
+            
+            // Ordenar por fecha más reciente
+            historial.sort((a, b) => new Date(b.fechaCompletado) - new Date(a.fechaCompletado));
+            
+            historial.forEach((orden, index) => {
+                const totalPrendas = Object.values(orden.tallas).reduce((sum, val) => sum + val, 0);
+                const fechaComp = new Date(orden.fechaCompletado).toLocaleDateString('es-ES', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                html += `
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 15px; border-left: 5px solid #4CAF50;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <h3 style="color: #2196F3; margin-bottom: 5px;">${orden.numeroOrden}</h3>
+                                <p style="color: #666; margin: 5px 0;">Cliente: <strong>${orden.cliente}</strong></p>
+                                <p style="color: #666; margin: 5px 0;">Prendas: <strong>${totalPrendas}</strong></p>
+                            </div>
+                            <div style="text-align: right;">
+                                <p style="color: #4CAF50; font-weight: bold; margin-bottom: 5px;">✅ COMPLETADA</p>
+                                <p style="color: #999; font-size: 0.9rem;">${fechaComp}</p>
+                                <button class="btn btn-primary btn-small" onclick="verOrdenCompleta('${orden.numeroOrden}')" style="margin-top: 10px;">
+                                    Ver Detalle
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += `
+                    </div>
+                    <div style="text-align: center; margin-top: 30px;">
+                        <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">
+                            <i class="fas fa-times"></i> Cerrar
+                        </button>
+                        <button class="btn btn-success" onclick="exportarHistorial()">
+                            <i class="fas fa-download"></i> Exportar Historial
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            // Crear modal
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+            modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 9999; overflow-y: auto; padding: 20px;';
+            modal.innerHTML = html;
+            
+            document.body.appendChild(modal);
+            
+            // Cerrar al hacer click fuera
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+        }
+
+        function exportarHistorial() {
+            const historial = JSON.parse(localStorage.getItem('historialOrdenes') || '[]');
+            
+            if (historial.length === 0) {
+                mostrarNotificacion('No hay historial para exportar', 'info');
+                return;
+            }
+            
+            const csv = [
+                ['Número Orden', 'Cliente', 'Fecha Completado', 'Total Prendas', 'Tipo Prenda'].join(','),
+                ...historial.map(orden => {
+                    const total = Object.values(orden.tallas).reduce((sum, val) => sum + val, 0);
+                    const fecha = new Date(orden.fechaCompletado).toLocaleDateString('es-ES');
+                    return [
+                        orden.numeroOrden,
+                        orden.cliente,
+                        fecha,
+                        total,
+                        orden.tipoPrenda
+                    ].join(',');
+                })
+            ].join('\n');
+            
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `historial_ordenes_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+            
+
+            mostrarNotificacion('✅ Historial exportado', 'success');
+        }
+
+        function ampliarImagen(imagenSrc) {
+        const modal = document.createElement('div');
+        modal.id = 'modalImagenAmpliada';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+            cursor: zoom-out;
+        `;
+        
+        const contenedor = document.createElement('div');
+        contenedor.style.cssText = 'position: relative;';
+        
+        const img = document.createElement('img');
+        img.src = imagenSrc;
+        img.style.cssText = 'max-width: 90vw; max-height: 90vh; border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.5);';
+        
+        const btnCerrar = document.createElement('button');
+        btnCerrar.textContent = '✕';
+        btnCerrar.style.cssText = `
+            position: absolute;
+            top: -20px;
+            right: -20px;
+            background: #f44336;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.8rem;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(244, 67, 54, 0.5);
+            transition: all 0.3s ease;
+        `;
+        
+        btnCerrar.onmouseover = () => { btnCerrar.style.transform = 'scale(1.1)'; };
+        btnCerrar.onmouseout = () => { btnCerrar.style.transform = 'scale(1)'; };
+        
+        btnCerrar.addEventListener('click', function(e) {
+            e.stopPropagation();
+            modal.remove();
+        });
+        
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+        
+        contenedor.appendChild(img);
+        contenedor.appendChild(btnCerrar);
+        modal.appendChild(contenedor);
+        document.body.appendChild(modal);
+    }
+
+    function mostrarNotificacion(mensaje, tipo) {
+        const notif = document.createElement('div');
+        notif.className = `notification ${tipo}`;
+        notif.textContent = mensaje;
+        document.body.appendChild(notif);
+        
+        setTimeout(() => {
+            notif.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => notif.remove(), 300);
+        }, 3000);
+    }
+    </script>
+</body>
+</html>

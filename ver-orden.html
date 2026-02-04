@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orden de Producción - REG Marketing</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .orden-documento {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 0;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        .orden-header {
+            background: white;
+            border: 3px solid #1565C0;
+            border-bottom: none;
+        }
+
+        .orden-header-top {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            border-bottom: 3px solid #1565C0;
+        }
+
+        .orden-logo {
+            padding: 20px;
+            border-right: 3px solid #1565C0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+        }
+
+        .orden-logo img {
+            max-width: 150px;
+            max-height: 80px;
+        }
+
+        .orden-titulo {
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+        }
+
+        .orden-titulo h1 {
+            font-size: 2rem;
+            color: #1565C0;
+            text-align: center;
+        }
+
+        .orden-info-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            border-bottom: 3px solid #1565C0;
+        }
+
+        .info-seccion {
+            border-right: 3px solid #1565C0;
+            padding: 10px 15px;
+        }
+
+        .info-seccion:last-child {
+            border-right: none;
+        }
+
+        .info-seccion-header {
+            background: #1565C0;
+            color: white;
+            padding: 5px 10px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            margin: -10px -15px 10px -15px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            font-size: 0.9rem;
+        }
+
+        .info-label {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .info-value {
+            color: #666;
+        }
+
+        .orden-especificaciones {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            border: 3px solid #1565C0;
+            border-top: none;
+        }
+
+        .especificaciones-left {
+            border-right: 3px solid #1565C0;
+            padding: 0;
+        }
+
+        .especificaciones-right {
+            padding: 0;
+        }
+
+        .spec-header {
+            background: #1565C0;
+            color: white;
+            padding: 8px 15px;
+            font-weight: bold;
+            font-size: 0.95rem;
+        }
+
+        .spec-content {
+            padding: 15px;
+        }
+
+        .spec-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .spec-row:last-child {
+            border-bottom: none;
+        }
+
+        .diseno-section {
+            padding: 20px;
+            text-align: center;
+            min-height: 300px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .diseno-imagen {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .observaciones-box {
+            min-height: 100px;
+            padding: 15px;
+            border: 2px solid #1565C0;
+            border-radius: 5px;
+            background: #f9f9f9;
+            white-space: pre-wrap;
+        }
+
+        .tallas-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 3px solid #1565C0;
+            border-top: none;
+        }
+
+        .tallas-table th {
+            background: #1565C0;
+            color: white;
+            padding: 10px 5px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .tallas-table td {
+            padding: 12px 8px;
+            text-align: center;
+            border: 2px solid #1565C0;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        .tallas-table .total-col {
+            background: #E3F2FD;
+            font-size: 1.2rem;
+            color: #1565C0;
+        }
+
+        .total-general {
+            background: #1565C0;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 1.3rem;
+            font-weight: bold;
+            border: 3px solid #1565C0;
+            border-top: none;
+        }
+
+        .acciones-orden {
+            padding: 20px;
+            text-align: center;
+            background: #f5f5f5;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            margin: 0 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #2196F3;
+            color: white;
+        }
+
+        .btn-success {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #757575;
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            .acciones-orden {
+                display: none;
+            }
+            .orden-documento {
+                box-shadow: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .orden-info-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .orden-especificaciones {
+                grid-template-columns: 1fr;
+            }
+            
+            .info-seccion,
+            .especificaciones-left {
+                border-right: none;
+                border-bottom: 3px solid #1565C0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="orden-documento">
+        <!-- HEADER -->
+        <div class="orden-header">
+            <div class="orden-header-top">
+                <div class="orden-logo">
+                    <img src="logo.png" alt="REG Marketing" onerror="this.style.display='none'">
+                </div>
+                <div class="orden-titulo">
+                    <h1>ORDEN DE PRODUCCIÓN</h1>
+                </div>
+            </div>
+
+            <!-- INFO PRINCIPAL -->
+            <div class="orden-info-grid">
+                <div class="info-seccion">
+                    <div class="info-seccion-header">INFORMACIÓN DEL CLIENTE / EMPRESA</div>
+                    <div class="info-row">
+                        <span class="info-label">CLIENTE:</span>
+                        <span class="info-value" id="infoCliente">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">ARTE:</span>
+                        <span class="info-value" id="infoArte">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">TIPO DE PEDIDO:</span>
+                        <span class="info-value" id="infoTipoPedido">-</span>
+                    </div>
+                </div>
+
+                <div class="info-seccion">
+                    <div class="info-seccion-header">FECHA PEDIDO</div>
+                    <div style="text-align: center; font-size: 1.2rem; font-weight: bold; color: #1565C0; padding: 10px 0;" id="infoFechaPedido">-</div>
+                </div>
+
+                <div class="info-seccion">
+                    <div class="info-seccion-header">FECHA ENTREGA</div>
+                    <div style="text-align: center; font-size: 1.2rem; font-weight: bold; color: #f44336; padding: 10px 0;" id="infoFechaEntrega">-</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ESPECIFICACIONES -->
+        <div class="orden-especificaciones">
+            <div class="especificaciones-left">
+                <div class="spec-header">IMPRESORA:</div>
+                <div class="spec-content">
+                    <div class="spec-row">
+                        <span class="info-label">Impresora:</span>
+                        <span class="info-value" id="specImpresora">-</span>
+                    </div>
+                </div>
+
+                <div class="spec-header">DESCRIPCIÓN:</div>
+                <div class="spec-content">
+                    <div class="spec-row">
+                        <span class="info-label">Descripción:</span>
+                        <span class="info-value" id="specDescripcion">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="especificaciones-right">
+                <div class="spec-header" style="text-align: center;">ESPECIFICACIONES</div>
+                <div class="spec-content">
+                    <div class="spec-row">
+                        <span class="info-label">TELA:</span>
+                        <span class="info-value" id="specTela">-</span>
+                    </div>
+                    <div class="spec-row">
+                        <span class="info-label">CUELLO:</span>
+                        <span class="info-value" id="specCuello">-</span>
+                    </div>
+                    <div class="spec-row">
+                        <span class="info-label">COLOR CUELLO:</span>
+                        <span class="info-value" id="specColorCuello">-</span>
+                    </div>
+                    <div class="spec-row">
+                        <span class="info-label">MARQUILLA:</span>
+                        <span class="info-value" id="specMarquilla">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DISEÑO -->
+        <div class="orden-especificaciones">
+            <div style="grid-column: 1 / -1;">
+                <div class="spec-header" style="text-align: center;">DISEÑO DEL PRODUCTO</div>
+                <div class="diseno-section" id="disenoSection">
+                    <p style="color: #999;">No se ha cargado ninguna imagen</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- TABLA DE TALLAS -->
+        <table class="tallas-table">
+            <thead>
+                <tr>
+                    <th colspan="11" style="background: #1565C0; padding: 12px; font-size: 1.1rem;">TALLAS</th>
+                </tr>
+                <tr>
+                    <th>8</th>
+                    <th>12</th>
+                    <th>16</th>
+                    <th>XS</th>
+                    <th>S</th>
+                    <th>M</th>
+                    <th>L</th>
+                    <th>XL</th>
+                    <th>2XL</th>
+                    <th>3XL</th>
+                    <th>TOTAL</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td id="cant8">0</td>
+                    <td id="cant12">0</td>
+                    <td id="cant16">0</td>
+                    <td id="cantXS">0</td>
+                    <td id="cantS">0</td>
+                    <td id="cantM">0</td>
+                    <td id="cantL">0</td>
+                    <td id="cantXL">0</td>
+                    <td id="cant2XL">0</td>
+                    <td id="cant3XL">0</td>
+                    <td class="total-col" id="totalTallas">0</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- TOTAL GENERAL -->
+        <div class="total-general">
+            TOTAL PEDIDO GENERAL: <span id="totalGeneral">0</span>
+        </div>
+
+        <!-- OBSERVACIONES -->
+        <div style="border: 3px solid #1565C0; border-top: none; padding: 20px;">
+            <div class="spec-header">OBSERVACIONES:</div>
+            <div class="observaciones-box" id="observacionesTexto">
+                Sin observaciones
+            </div>
+        </div>
+    </div>
+
+    <!-- ACCIONES -->
+    <div class="acciones-orden">
+        <button class="btn btn-primary" onclick="window.print()">
+            <i class="fas fa-print"></i> Imprimir
+        </button>
+        <button class="btn btn-success" onclick="descargarPDF()">
+            <i class="fas fa-file-pdf"></i> Descargar PDF
+        </button>
+        <a href="dashboard-jefe.html" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Volver
+        </a>
+    </div>
+
+    <script>
+        // Obtener parámetro de URL o cargar última orden
+        const urlParams = new URLSearchParams(window.location.search);
+        const numeroOrden = urlParams.get('orden');
+
+        function cargarOrden() {
+            const ordenes = JSON.parse(localStorage.getItem('ordenes') || '[]');
+            let orden;
+
+            if (numeroOrden) {
+                orden = ordenes.find(o => o.numeroOrden === numeroOrden);
+            } else {
+                orden = ordenes[ordenes.length - 1];
+            }
+
+            if (!orden) {
+                alert('No se encontró la orden');
+                window.location.href = 'dashboard-jefe.html';
+                return;
+            }
+
+            // Llenar información
+            document.getElementById('infoCliente').textContent = orden.cliente;
+            document.getElementById('infoArte').textContent = orden.arte || '-';
+            document.getElementById('infoTipoPedido').textContent = orden.tipoPrenda;
+            document.getElementById('infoFechaPedido').textContent = formatearFecha(orden.fechaPedido);
+            document.getElementById('infoFechaEntrega').textContent = formatearFecha(orden.fechaEntrega);
+            
+            document.getElementById('specImpresora').textContent = orden.impresora || '-';
+            document.getElementById('specDescripcion').textContent = orden.descripcion || '-';
+            document.getElementById('specTela').textContent = orden.tela || '-';
+            document.getElementById('specCuello').textContent = orden.cuello;
+            document.getElementById('specColorCuello').textContent = orden.colorCuello || '-';
+            document.getElementById('specMarquilla').textContent = orden.marquilla || '-';
+
+            // Imagen de diseño
+            if (orden.imagenDiseno) {
+                document.getElementById('disenoSection').innerHTML = `
+                    <img src="${orden.imagenDiseno}" class="diseno-imagen" alt="Diseño">
+                `;
+            }
+
+            // Tallas
+            let totalGeneral = 0;
+            Object.keys(orden.tallas).forEach(talla => {
+                const cantidad = orden.tallas[talla];
+                const elementId = 'cant' + talla;
+                const element = document.getElementById(elementId);
+                if (element) {
+                    element.textContent = cantidad;
+                    totalGeneral += cantidad;
+                }
+            });
+
+            document.getElementById('totalTallas').textContent = totalGeneral;
+            document.getElementById('totalGeneral').textContent = totalGeneral;
+
+            // Observaciones
+            if (orden.observaciones) {
+                document.getElementById('observacionesTexto').textContent = orden.observaciones;
+            }
+
+            // Actualizar título
+            document.title = `Orden ${orden.numeroOrden} - ${orden.cliente}`;
+        }
+
+        function formatearFecha(fecha) {
+            const date = new Date(fecha + 'T00:00:00');
+            return date.toLocaleDateString('es-ES', { 
+                day: '2-digit', 
+                month: '2-digit', 
+                year: 'numeric' 
+            });
+        }
+
+        function descargarPDF() {
+            window.print();
+        }
+
+        // Cargar al iniciar
+        cargarOrden();
+    </script>
+</body>
+</html>
