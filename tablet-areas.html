@@ -6,6 +6,8 @@
     <title>Tablet Área - REG Marketing</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/@supabase/supabase-js@2.39.0/dist/umd/supabase.js"></script>
+    <script src="database.js"></script>
     <style>
         body {
             background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
@@ -413,8 +415,14 @@
             document.getElementById('vistaArea').style.display = 'none';
         }
 
-        function cargarOrdenes() {
-            const ordenes = JSON.parse(localStorage.getItem('ordenes') || '[]');
+        async function cargarOrdenes() {
+             // Intentar cargar de Supabase primero
+            let ordenes = await window.DB.obtenerOrdenes();
+            
+            // Si no hay conexión o falla, usar localStorage
+            if (!ordenes || ordenes.length === 0) {
+                ordenes = JSON.parse(localStorage.getItem('ordenes') || '[]');
+            }
             const listaOrdenes = document.getElementById('listaOrdenes');
             
             const ordenesFiltradas = ordenes.filter(orden => {
@@ -585,22 +593,32 @@
             return html;
         }
 
-        function iniciarOrden(numeroOrden) {
-            const ordenes = JSON.parse(localStorage.getItem('ordenes') || '[]');
-            const index = ordenes.findIndex(o => o.numeroOrden === numeroOrden);
-            
-            if (index !== -1) {
-                ordenes[index].estado[areaActual] = 'en-proceso';
-                if (!ordenes[index][`progreso_${areaActual}`]) {
-                    ordenes[index][`progreso_${areaActual}`] = {};
+        async function iniciarOrden(numeroOrden) {
+            try {
+                // Actualizar en Supabase
+                await window.DB.actualizarEstadoArea(numeroOrden, areaActual, 'en-proceso');
+                
+                // También actualizar localStorage
+                const ordenes = JSON.parse(localStorage.getItem('ordenes') || '[]');
+                const index = ordenes.findIndex(o => o.numeroOrden === numeroOrden);
+                
+                if (index !== -1) {
+                    ordenes[index].estado[areaActual] = 'en-proceso';
+                    if (!ordenes[index][`progreso_${areaActual}`]) {
+                        ordenes[index][`progreso_${areaActual}`] = {};
+                    }
+                    localStorage.setItem('ordenes', JSON.stringify(ordenes));
                 }
-                localStorage.setItem('ordenes', JSON.stringify(ordenes));
+                
                 cargarOrdenes();
                 mostrarNotificacion(`🚀 Orden ${numeroOrden} iniciada`, 'info');
+            } catch (error) {
+                console.error('Error:', error);
+                mostrarNotificacion('⚠️ Error al iniciar orden', 'error');
             }
         }
 
-        function agregarProgreso(numeroOrden, talla, restantes) {
+        async function agregarProgreso(numeroOrden, talla, restantes) {
             const input = document.getElementById(`input-${numeroOrden}-${talla}`);
             const cantidad = parseInt(input.value);
             
@@ -620,6 +638,8 @@
                 }
                 
                 orden[`progreso_${areaActual}`][talla] = (orden[`progreso_${areaActual}`][talla] || 0) + cantidad;
+                // Actualizar en Supabase
+                await window.DB.actualizarProgresoArea(numeroOrden, areaActual, orden[`progreso_${areaActual}`]);
                 
                 // Verificar si completó todas las tallas
                 const todasCompletadas = Object.keys(orden.tallas).every(t => {
@@ -635,7 +655,7 @@
                     
                     if (todasLasAreasCompletadas) {
                         // Orden completada totalmente - mover a historial
-                        moverAHistorial(orden);
+                        await moverAHistorial(orden);
                         ordenes.splice(index, 1); // Eliminar de ordenes activas
                         mostrarNotificacion(`🎉 ¡Orden ${orden.numeroOrden} COMPLETADA TOTALMENTE! Movida al historial`, 'success');
                     } else {
@@ -652,10 +672,60 @@
             return false;
         }
 
-        function completarOrdenArea(numeroOrden) {
-            if (!confirm(`¿Completar TODAS las tallas restantes de esta orden en ${areasInfo[areaActual].nombre}?`)) {
-                return;
-            }
+        async function completarOrdenArea(numeroOrden) {
+            // Modal bonito
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.8);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 99999;
+            `;
+            
+            modal.innerHTML = `
+                <div style="background: white; padding: 40px; border-radius: 20px; max-width: 500px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+                    <i class="fas fa-check-circle" style="font-size: 4rem; color: #4CAF50; margin-bottom: 20px;"></i>
+                    <h2 style="color: #333; margin-bottom: 15px;">¿Completar todas las tallas?</h2>
+                    <p style="color: #666; font-size: 1.1rem; margin-bottom: 30px;">
+                        Se marcarán como completadas TODAS las tallas restantes de esta orden en <strong>${areasInfo[areaActual].nombre}</strong>
+                    </p>
+                    <div style="display: flex; gap: 15px; justify-content: center;">
+                        <button id="btnCancelarCompletar" class="btn btn-secondary" style="padding: 12px 30px;">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                        <button id="btnConfirmarCompletar" class="btn btn-success" style="padding: 12px 30px;">
+                            <i class="fas fa-check"></i> Sí, Completar
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            const respuesta = await new Promise(resolve => {
+                document.getElementById('btnCancelarCompletar').onclick = () => {
+                    modal.remove();
+                    resolve(false);
+                };
+                document.getElementById('btnConfirmarCompletar').onclick = () => {
+                    modal.remove();
+                    resolve(true);
+                };
+                modal.onclick = (e) => {
+                    if (e.target === modal) {
+                        modal.remove();
+                        resolve(false);
+                    }
+                };
+            });
+            
+            if (!respuesta) return;
 
             const ordenes = JSON.parse(localStorage.getItem('ordenes') || '[]');
             const index = ordenes.findIndex(o => o.numeroOrden === numeroOrden);
@@ -676,11 +746,15 @@
                 
                 orden.estado[areaActual] = 'completado';
                 
+                // ACTUALIZAR EN SUPABASE
+                await window.DB.actualizarEstadoArea(numeroOrden, areaActual, 'completado');
+                await window.DB.actualizarProgresoArea(numeroOrden, areaActual, orden[`progreso_${areaActual}`]);
+                
                 // Verificar si TODAS las áreas están completadas
                 const todasLasAreasCompletadas = Object.values(orden.estado).every(e => e === 'completado');
                 
                 if (todasLasAreasCompletadas) {
-                    moverAHistorial(orden);
+                    await moverAHistorial(orden);
                     ordenes.splice(index, 1);
                     mostrarNotificacion(`🎉 ¡Orden ${orden.numeroOrden} COMPLETADA TOTALMENTE! Movida al historial`, 'success');
                 } else {
@@ -696,15 +770,37 @@
             window.open(`ver-orden.html?orden=${numeroOrden}&origen=tablet`, '_blank');
         }
 
-        function moverAHistorial(orden) {
-            // Guardar en historial
-            let historial = JSON.parse(localStorage.getItem('historialOrdenes') || '[]');
-            
-            orden.fechaCompletado = new Date().toISOString();
-            orden.estadoFinal = 'completado';
-            
-            historial.push(orden);
-            localStorage.setItem('historialOrdenes', JSON.stringify(historial));
+        async function moverAHistorial(orden) {
+            try {
+                console.log('🔍 Intentando mover al historial:', orden.numeroOrden);
+                
+                // Asegurarse de que todos los campos estén presentes
+                const ordenCompleta = {
+                    ...orden, // Copiar todos los campos existentes
+                    fechaCompletado: new Date().toISOString(),
+                    estadoFinal: 'completado',
+                    // Asegurar que estos campos existan
+                    tipoCuello: orden.tipoCuello || 'N/A',
+                    marquilla: orden.marquilla || 'N/A',
+                    descripcion: orden.descripcion || '',
+                    observaciones: orden.observaciones || '',
+                    disenoUrl: orden.disenoUrl || null,
+                    // Recalcular el total por si acaso
+                    total: Object.values(orden.tallas || {}).reduce((sum, cant) => sum + (parseInt(cant) || 0), 0)
+                };
+                
+                // Mover a historial en Supabase
+                await window.DB.moverAHistorial(ordenCompleta);
+                
+                // También en localStorage
+                let historial = JSON.parse(localStorage.getItem('historialOrdenes') || '[]');
+                historial.push(ordenCompleta);
+                localStorage.setItem('historialOrdenes', JSON.stringify(historial));
+                
+                console.log('✅ Orden movida al historial correctamente');
+            } catch (error) {
+                console.error('❌ Error al mover a historial:', error);
+            }
         }
 
         function ampliarImagen(imagenSrc) {
