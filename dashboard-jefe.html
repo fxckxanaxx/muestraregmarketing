@@ -1,11 +1,16 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    <!-- jsPDF para generar PDFs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Jefe - REG Marketing</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/@supabase/supabase-js@2.39.0/dist/umd/supabase.js"></script>
+    <script src="database.js"></script>
     <style>
         body {
             background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
@@ -407,8 +412,14 @@
     </div>
 
     <script>
-        function cargarOrdenes() {
-            const ordenes = JSON.parse(localStorage.getItem('ordenes') || '[]');
+        async function cargarOrdenes() {
+            // Intentar cargar de Supabase primero
+            let ordenes = await window.DB.obtenerOrdenes();
+
+            // Si no hay conexión o falla, usar localStorage
+            if (!ordenes || ordenes.length === 0) {
+                ordenes = JSON.parse(localStorage.getItem('ordenes') || '[]');
+            }
             const listaOrdenes = document.getElementById('listaOrdenes');
             
             if (ordenes.length === 0) {
@@ -467,9 +478,17 @@
                                 <div style="font-size: 0.9rem; color: #666; margin-top: 5px;">
                                     <i class="fas fa-tshirt"></i> ${totalPrendas} prendas
                                 </div>
-                                <button class="btn btn-primary btn-small" style="margin-top: 10px;" onclick="event.stopPropagation(); verOrdenCompleta('${orden.numeroOrden}')">
-                                    <i class="fas fa-eye"></i> Ver Detalle
-                                </button>
+                                <div style="display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;">
+                                    <button class="btn btn-primary btn-small" onclick="event.stopPropagation(); verOrdenCompleta('${orden.numeroOrden}')" style="padding: 8px 12px; font-size: 0.85rem;">
+                                        <i class="fas fa-eye"></i> Ver
+                                    </button>
+                                    <button class="btn btn-success btn-small" onclick="event.stopPropagation(); editarOrden('${orden.numeroOrden}')" style="padding: 8px 12px; font-size: 0.85rem;">
+                                        <i class="fas fa-edit"></i> Editar
+                                    </button>
+                                    <button class="btn btn-danger btn-small" onclick="event.stopPropagation(); eliminarOrden('${orden.numeroOrden}')" style="padding: 8px 12px; font-size: 0.85rem;">
+                                        <i class="fas fa-trash"></i> Eliminar
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -597,49 +616,114 @@
         }
         
         function verHistorial() {
+            console.log('🔍 Abriendo historial...');
+            
             const historial = JSON.parse(localStorage.getItem('historialOrdenes') || '[]');
+            console.log('📋 Órdenes en historial:', historial);
             
             if (historial.length === 0) {
-                mostrarNotificacion('📋 No hay órdenes completadas en el historial aún', 'info');
+                // Modal bonito cuando no hay historial
+                const modalVacio = document.createElement('div');
+                modalVacio.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0,0,0,0.8);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 99999;
+                `;
+                
+                modalVacio.innerHTML = `
+                    <div style="background: white; padding: 40px; border-radius: 20px; max-width: 500px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+                        <i class="fas fa-inbox" style="font-size: 5rem; color: #95a5a6; margin-bottom: 20px;"></i>
+                        <h2 style="color: #2c3e50; margin-bottom: 15px;">Historial Vacío</h2>
+                        <p style="color: #7f8c8d; font-size: 1.1rem; margin-bottom: 30px;">
+                            No hay órdenes completadas en el historial aún.
+                        </p>
+                        <button id="cerrarModalVacio" class="btn btn-primary" style="padding: 12px 30px;">
+                            <i class="fas fa-check"></i> Entendido
+                        </button>
+                    </div>
+                `;
+                
+                document.body.appendChild(modalVacio);
+                
+                document.getElementById('cerrarModalVacio').onclick = () => {
+                    modalVacio.remove();
+                };
+                
+                // Cerrar al hacer clic fuera
+                modalVacio.onclick = (e) => {
+                    if (e.target === modalVacio) {
+                        modalVacio.remove();
+                    }
+                };
+                
                 return;
             }
-            
-            let html = `
-                <div style="background: white; padding: 30px; border-radius: 15px; max-width: 900px; margin: 0 auto;">
-                    <h2 style="color: #2196F3; margin-bottom: 20px;">
-                        <i class="fas fa-history"></i> Historial de Órdenes Completadas
-                    </h2>
-                    <p style="color: #666; margin-bottom: 30px;">Total de órdenes completadas: <strong>${historial.length}</strong></p>
-                    
-                    <div style="max-height: 500px; overflow-y: auto;">
+
+            // Crear modal para mostrar historial
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.8);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 99999;
+                overflow: auto;
+                padding: 20px;
             `;
             
-            // Ordenar por fecha más reciente
-            historial.sort((a, b) => new Date(b.fechaCompletado) - new Date(a.fechaCompletado));
+            let historialHTML = `
+                <div style="background: white; padding: 40px; border-radius: 20px; max-width: 1200px; width: 100%; max-height: 90vh; overflow-y: auto;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 3px solid #2980b9;">
+                        <h2 style="color: #2c3e50; margin: 0;">
+                            <i class="fas fa-history"></i> Historial de Órdenes Completadas
+                        </h2>
+                        <button id="cerrarHistorial" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cerrar
+                        </button>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; margin-bottom: 30px;">
+                        <button id="generarReportePDF" class="btn btn-success" style="padding: 10px 20px;">
+                            <i class="fas fa-file-pdf"></i> Generar Reporte PDF
+                        </button>
+                        <button id="limpiarHistorial" class="btn btn-danger" style="padding: 10px 20px;">
+                            <i class="fas fa-trash-alt"></i> Limpiar Historial
+                        </button>
+                    </div>
+                    
+                    <div style="display: grid; gap: 20px;">
+            `;
             
-            historial.forEach((orden, index) => {
-                const totalPrendas = Object.values(orden.tallas).reduce((sum, val) => sum + val, 0);
-                const fechaComp = new Date(orden.fechaCompletado).toLocaleDateString('es-ES', {
-                    day: '2-digit',
-                    month: 'short',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-                
-                html += `
-                    <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 15px; border-left: 5px solid #4CAF50;">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
+            historial.forEach(orden => {
+                const fecha = new Date(orden.fechaCompletado || orden.fechaCreacion);
+                historialHTML += `
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; border-left: 5px solid #28a745;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
                             <div>
-                                <h3 style="color: #2196F3; margin-bottom: 5px;">${orden.numeroOrden}</h3>
-                                <p style="color: #666; margin: 5px 0;">Cliente: <strong>${orden.cliente}</strong></p>
-                                <p style="color: #666; margin: 5px 0;">Prendas: <strong>${totalPrendas}</strong></p>
+                                <strong style="color: #666;">Orden:</strong> ${orden.numeroOrden}<br>
+                                <strong style="color: #666;">Cliente:</strong> ${orden.cliente}<br>
+                                <strong style="color: #666;">Prenda:</strong> ${orden.tipoPrenda}
+                            </div>
+                            <div>
+                                <strong style="color: #666;">Total:</strong> ${orden.total} unidades<br>
+                                <strong style="color: #666;">Completada:</strong> ${fecha.toLocaleDateString()}<br>
+                                <strong style="color: #666;">Hora:</strong> ${fecha.toLocaleTimeString()}
                             </div>
                             <div style="text-align: right;">
-                                <p style="color: #4CAF50; font-weight: bold; margin-bottom: 5px;">✅ COMPLETADA</p>
-                                <p style="color: #999; font-size: 0.9rem;">${fechaComp}</p>
-                                <button class="btn btn-primary btn-small" onclick="verOrdenCompleta('${orden.numeroOrden}')" style="margin-top: 10px;">
-                                    Ver Detalle
+                                <button class="btn btn-primary btn-small" onclick='verOrdenCompletaHistorial(${JSON.stringify(orden).replace(/'/g, "&#39;")})'>
+                                    <i class="fas fa-eye"></i> Ver Detalles
                                 </button>
                             </div>
                         </div>
@@ -647,40 +731,246 @@
                 `;
             });
             
-            html += `
+            historialHTML += `
                     </div>
+                </div>
+            `;
+            
+            modal.innerHTML = historialHTML;
+            document.body.appendChild(modal);
+            
+            document.getElementById('cerrarHistorial').onclick = () => {
+                modal.remove();
+            };
+            
+            // Cerrar al hacer clic fuera del modal
+            modal.onclick = (e) => {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            };
+
+            // Botón limpiar historial
+            document.getElementById('limpiarHistorial').onclick = async () => {
+                const confirmar = await mostrarModalConfirmacion(
+                    '¿Estás seguro?',
+                    'Se eliminarán TODAS las órdenes del historial. Esta acción no se puede deshacer.',
+                    'Cancelar',
+                    'Sí, Limpiar Todo'
+                );
+                
+                if (confirmar) {
+                    try {
+                        // Limpiar en Supabase
+                        await window.DB.limpiarHistorial();
+                        
+                        // Limpiar en localStorage
+                        localStorage.removeItem('historialOrdenes');
+                        
+                        modal.remove();
+                        
+                        // Notificación toast bonita
+                        const toast = document.createElement('div');
+                        toast.style.cssText = `
+                            position: fixed;
+                            top: 20px;
+                            right: 20px;
+                            background: #27ae60;
+                            color: white;
+                            padding: 15px 25px;
+                            border-radius: 10px;
+                            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                            z-index: 999999;
+                            font-size: 16px;
+                            display: flex;
+                            align-items: center;
+                            gap: 10px;
+                        `;
+                        toast.innerHTML = '<i class="fas fa-check-circle"></i> Historial limpiado correctamente';
+                        document.body.appendChild(toast);
+                        
+                        setTimeout(() => {
+                            toast.style.opacity = '0';
+                            toast.style.transition = 'opacity 0.3s';
+                            setTimeout(() => toast.remove(), 300);
+                        }, 3000);
+                        
+                    } catch (error) {
+                        console.error('Error limpiando historial:', error);
+                        
+                        // Toast de error
+                        const toastError = document.createElement('div');
+                        toastError.style.cssText = `
+                            position: fixed;
+                            top: 20px;
+                            right: 20px;
+                            background: #e74c3c;
+                            color: white;
+                            padding: 15px 25px;
+                            border-radius: 10px;
+                            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                            z-index: 999999;
+                            font-size: 16px;
+                            display: flex;
+                            align-items: center;
+                            gap: 10px;
+                        `;
+                        toastError.innerHTML = '<i class="fas fa-exclamation-circle"></i> Error al limpiar el historial';
+                        document.body.appendChild(toastError);
+                        
+                        setTimeout(() => {
+                            toastError.style.opacity = '0';
+                            toastError.style.transition = 'opacity 0.3s';
+                            setTimeout(() => toastError.remove(), 300);
+                        }, 3000);
+                    }
+                }
+            };
+
+            // Botón generar reporte PDF
+            document.getElementById('generarReportePDF').onclick = () => {
+                console.log('🔍 Botón PDF clickeado');
+                console.log('📊 Historial a procesar:', historial);
+                console.log('📦 jsPDF disponible?', typeof window.jspdf);
+                
+                try {
+                    generarReporteMensualPDF(historial);
+                    console.log('✅ Función ejecutada sin errores');
+                } catch (error) {
+                    console.error('❌ Error al generar PDF:', error);
+                    alert('Error al generar PDF: ' + error.message);
+                }
+            };
+        }
+
+        // Función para ver detalles de orden del historial
+        function verOrdenCompletaHistorial(orden) {
+            console.log('Ver orden del historial:', orden);
+            
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.9);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 999999;
+                overflow: auto;
+                padding: 20px;
+            `;
+            
+            let tallasHTML = '';
+            for (let [talla, cantidad] of Object.entries(orden.tallas || {})) {
+                if (cantidad > 0) {
+                    tallasHTML += `<span style="background: #28a745; color: white; padding: 5px 10px; border-radius: 5px; margin: 5px;">${talla}: ${cantidad}</span>`;
+                }
+            }
+            
+            modal.innerHTML = `
+                <div style="background: white; padding: 40px; border-radius: 20px; max-width: 800px; width: 100%;">
+                    <div style="text-align: center; margin-bottom: 30px;">
+                        <h2 style="color: #28a745; margin-bottom: 10px;">
+                            <i class="fas fa-check-circle"></i> ORDEN COMPLETADA
+                        </h2>
+                        <h3 style="color: #333;">${orden.numeroOrden}</h3>
+                    </div>
+                    
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                        <h4 style="color: #666; margin-bottom: 15px;"><i class="fas fa-info-circle"></i> Información General</h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div><strong>Cliente:</strong> ${orden.cliente}</div>
+                            <div><strong>Tipo de Prenda:</strong> ${orden.tipoPrenda}</div>
+                            <div><strong>Tipo de Cuello:</strong> ${orden.tipoCuello || 'N/A'}</div>
+                            <div><strong>Marquilla:</strong> ${orden.marquilla || 'N/A'}</div>
+                            <div><strong>Total Unidades:</strong> ${orden.total}</div>
+                            <div><strong>Fecha Completado:</strong> ${new Date(orden.fechaCompletado || orden.fechaCreacion).toLocaleDateString()}</div>
+                        </div>
+                    </div>
+                    
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                        <h4 style="color: #666; margin-bottom: 15px;"><i class="fas fa-ruler"></i> Tallas</h4>
+                        <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                            ${tallasHTML}
+                        </div>
+                    </div>
+                    
+                    ${orden.disenoUrl ? `
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px; text-align: center;">
+                        <h4 style="color: #666; margin-bottom: 15px;"><i class="fas fa-image"></i> Diseño</h4>
+                        <img src="${orden.disenoUrl}" style="max-width: 100%; max-height: 400px; border-radius: 10px;" />
+                    </div>
+                    ` : ''}
+                    
                     <div style="text-align: center; margin-top: 30px;">
-                        <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">
+                        <button id="cerrarDetalleHistorial" class="btn btn-secondary" style="padding: 12px 30px;">
                             <i class="fas fa-times"></i> Cerrar
-                        </button>
-                        <button class="btn btn-success" onclick="exportarHistorial()">
-                            <i class="fas fa-download"></i> Exportar Historial
                         </button>
                     </div>
                 </div>
             `;
             
-            // Crear modal
-            const modal = document.createElement('div');
-            modal.className = 'modal-overlay';
-            modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 9999; overflow-y: auto; padding: 20px;';
-            modal.innerHTML = html;
-            
             document.body.appendChild(modal);
             
-            // Cerrar al hacer click fuera
-            modal.addEventListener('click', (e) => {
+            document.getElementById('cerrarDetalleHistorial').onclick = () => {
+                modal.remove();
+            };
+            
+            modal.onclick = (e) => {
                 if (e.target === modal) {
                     modal.remove();
                 }
-            });
+            };
         }
 
         function exportarHistorial() {
             const historial = JSON.parse(localStorage.getItem('historialOrdenes') || '[]');
             
             if (historial.length === 0) {
-                mostrarNotificacion('No hay historial para exportar', 'info');
+                // Modal bonito cuando no hay historial
+                const modalVacio = document.createElement('div');
+                modalVacio.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0,0,0,0.8);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 99999;
+                `;
+                
+                modalVacio.innerHTML = `
+                    <div style="background: white; padding: 40px; border-radius: 20px; max-width: 500px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+                        <i class="fas fa-inbox" style="font-size: 5rem; color: #95a5a6; margin-bottom: 20px;"></i>
+                        <h2 style="color: #2c3e50; margin-bottom: 15px;">Historial Vacío</h2>
+                        <p style="color: #7f8c8d; font-size: 1.1rem; margin-bottom: 30px;">
+                            No hay órdenes completadas en el historial aún.
+                        </p>
+                        <button id="cerrarModalVacio" class="btn btn-primary" style="padding: 12px 30px;">
+                            <i class="fas fa-check"></i> Entendido
+                        </button>
+                    </div>
+                `;
+                
+                document.body.appendChild(modalVacio);
+                
+                document.getElementById('cerrarModalVacio').onclick = () => {
+                    modalVacio.remove();
+                };
+                
+                // Cerrar al hacer clic fuera
+                modalVacio.onclick = (e) => {
+                    if (e.target === modalVacio) {
+                        modalVacio.remove();
+                    }
+                };
+                
                 return;
             }
             
@@ -782,6 +1072,356 @@
             notif.style.animation = 'slideOut 0.3s ease';
             setTimeout(() => notif.remove(), 300);
         }, 3000);
+    }
+    async function limpiarHistorial() {
+        if (!confirm('⚠️ ¿Estás SEGURO de eliminar TODO el historial?\n\nEsta acción NO se puede deshacer.')) {
+            return;
+        }
+        
+        if (!confirm('⚠️ ÚLTIMA CONFIRMACIÓN\n\nSe eliminarán TODAS las órdenes completadas.\n¿Continuar?')) {
+            return;
+        }
+        
+        try {
+            // Limpiar localStorage
+            localStorage.removeItem('historialOrdenes');
+            
+            mostrarNotificacion('🗑️ Historial limpiado correctamente', 'success');
+            
+            // Cerrar modal
+            document.querySelector('.modal-overlay')?.remove();
+            
+        } catch (error) {
+            console.error('Error al limpiar historial:', error);
+            mostrarNotificacion('❌ Error al limpiar historial', 'error');
+        }
+    }
+    async function eliminarOrden(numeroOrden) {
+        // Modal bonito
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+        `;
+        
+        modal.innerHTML = `
+            <div style="background: white; padding: 40px; border-radius: 20px; max-width: 500px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+                <i class="fas fa-trash-alt" style="font-size: 4rem; color: #f44336; margin-bottom: 20px;"></i>
+                <h2 style="color: #333; margin-bottom: 15px;">¿Eliminar la orden ${numeroOrden}?</h2>
+                <p style="color: #666; font-size: 1.1rem; margin-bottom: 30px;">
+                    Esta acción <strong>NO se puede deshacer</strong>
+                </p>
+                <div style="display: flex; gap: 15px; justify-content: center;">
+                    <button id="btnCancelar" class="btn btn-secondary" style="padding: 12px 30px;">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button id="btnEliminar" class="btn btn-danger" style="padding: 12px 30px;">
+                        <i class="fas fa-trash"></i> Sí, Eliminar
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        const respuesta = await new Promise(resolve => {
+            document.getElementById('btnCancelar').onclick = () => {
+                modal.remove();
+                resolve(false);
+            };
+            document.getElementById('btnEliminar').onclick = () => {
+                modal.remove();
+                resolve(true);
+            };
+            modal.onclick = (e) => {
+                if (e.target === modal) {
+                    modal.remove();
+                    resolve(false);
+                }
+            };
+        });
+        
+        if (!respuesta) return;
+        
+        try {
+            // Eliminar de Supabase
+            const resultado = await window.DB.eliminarOrden(numeroOrden);
+            
+            if (resultado.success) {
+                // También eliminar de localStorage
+                let ordenes = JSON.parse(localStorage.getItem('ordenes') || '[]');
+                ordenes = ordenes.filter(o => o.numeroOrden !== numeroOrden);
+                localStorage.setItem('ordenes', JSON.stringify(ordenes));
+                
+                mostrarNotificacion(`🗑️ Orden ${numeroOrden} eliminada`, 'success');
+                cargarOrdenes();
+            } else {
+                throw new Error(resultado.error);
+            }
+        } catch (error) {
+            console.error('Error al eliminar:', error);
+            mostrarNotificacion('❌ Error al eliminar orden', 'error');
+        }
+    }
+    function editarOrden(numeroOrden) {
+        window.location.href = `crear-orden.html?editar=${numeroOrden}`;
+    }
+
+    function generarReporteMensualPDF(historial) {
+        try {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Colores corporativos
+            const azulOscuro = [41, 128, 185];
+            
+            // Fecha actual
+            const hoy = new Date();
+            const mesActual = hoy.toLocaleString('es-ES', { month: 'long', year: 'numeric' });
+            
+            // Filtrar órdenes del mes actual Y validar datos
+            const ordenesDelMes = historial.filter(orden => {
+                const fecha = new Date(orden.fechaCompletado || orden.fechaCreacion);
+                return fecha.getMonth() === hoy.getMonth() && 
+                    fecha.getFullYear() === hoy.getFullYear();
+            }).map(orden => {
+                // Asegurar que todos los campos tengan valores válidos
+                return {
+                    ...orden,
+                    total: orden.total || 0,
+                    numeroOrden: orden.numeroOrden || 'N/A',
+                    cliente: orden.cliente || 'N/A',
+                    tipoPrenda: orden.tipoPrenda || 'N/A'
+                };
+            });
+            
+            if (ordenesDelMes.length === 0) {
+                alert('No hay órdenes completadas en el mes actual para generar el reporte.');
+                return;
+            }
+            
+            // ==========================================
+            // ENCABEZADO
+            // ==========================================
+
+            // Rectángulo azul en el encabezado
+            doc.setFillColor(...azulOscuro);
+            doc.rect(0, 0, 210, 50, 'F');
+
+            // Círculo blanco detrás del logo
+            doc.setFillColor(255, 255, 255);
+            doc.circle(30, 25, 18, 'F'); // x=30, y=25, radio=18
+
+            // Logo encima del círculo blanco
+            try {
+                const img = new Image();
+                img.src = 'logo.png';
+                if (img.complete) {
+                    doc.addImage(img, 'PNG', 15, 10, 30, 30);
+                }
+            } catch (error) {
+                console.log('Logo no cargado');
+            }
+
+            // Título principal
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(22);
+            doc.setFont(undefined, 'bold');
+            doc.text('REG MARKETING S.A.S', 105, 20, { align: 'center' });
+            
+            doc.setFontSize(16);
+            doc.text('REPORTE MENSUAL DE PRODUCCIÓN', 105, 30, { align: 'center' });
+            
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'normal');
+            doc.text(mesActual.toUpperCase(), 105, 40, { align: 'center' });
+            
+            // ==========================================
+            // RESUMEN EJECUTIVO
+            // ==========================================
+            
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(14);
+            doc.setFont(undefined, 'bold');
+            doc.text('RESUMEN EJECUTIVO', 15, 60);
+            
+            // Calcular estadísticas
+            const totalUnidades = ordenesDelMes.reduce((sum, orden) => sum + (parseInt(orden.total) || 0), 0);
+            const promedio = ordenesDelMes.length > 0 ? Math.round(totalUnidades / ordenesDelMes.length) : 0;
+            
+            // Cuadro 1: Total de órdenes
+            doc.setFillColor(52, 152, 219);
+            doc.roundedRect(15, 68, 58, 25, 3, 3, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(10);
+            doc.text('Órdenes Completadas', 44, 75, { align: 'center' });
+            doc.setFontSize(20);
+            doc.setFont(undefined, 'bold');
+            doc.text(ordenesDelMes.length.toString(), 44, 87, { align: 'center' });
+            
+            // Cuadro 2: Total de unidades
+            doc.setFillColor(46, 204, 113);
+            doc.roundedRect(78, 68, 58, 25, 3, 3, 'F');
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            doc.text('Unidades Producidas', 107, 75, { align: 'center' });
+            doc.setFontSize(20);
+            doc.setFont(undefined, 'bold');
+            doc.text(totalUnidades.toString(), 107, 87, { align: 'center' });
+            
+            // Cuadro 3: Promedio por orden
+            doc.setFillColor(155, 89, 182);
+            doc.roundedRect(141, 68, 58, 25, 3, 3, 'F');
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            doc.text('Promedio por Orden', 170, 75, { align: 'center' });
+            doc.setFontSize(20);
+            doc.setFont(undefined, 'bold');
+            doc.text(promedio.toString(), 170, 87, { align: 'center' });
+            
+            // ==========================================
+            // TABLA DE ÓRDENES
+            // ==========================================
+            
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(14);
+            doc.text('DETALLE DE ÓRDENES', 15, 105);
+            
+            const tableData = ordenesDelMes.map(orden => {
+                const fecha = new Date(orden.fechaCompletado || orden.fechaCreacion);
+                return [
+                    orden.numeroOrden,
+                    orden.cliente,
+                    orden.tipoPrenda,
+                    (parseInt(orden.total) || 0).toString(),
+                    fecha.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' })
+                ];
+            });
+            
+            doc.autoTable({
+                startY: 110,
+                head: [['N° Orden', 'Cliente', 'Tipo de Prenda', 'Unidades', 'Fecha']],
+                body: tableData,
+                theme: 'striped',
+                headStyles: { 
+                    fillColor: azulOscuro,
+                    fontSize: 11,
+                    fontStyle: 'bold',
+                    halign: 'center'
+                },
+                styles: { 
+                    fontSize: 10,
+                    cellPadding: 5
+                },
+                columnStyles: {
+                    0: { halign: 'center', fontStyle: 'bold' },
+                    3: { halign: 'center' },
+                    4: { halign: 'center' }
+                },
+                alternateRowStyles: {
+                    fillColor: [245, 245, 245]
+                }
+            });
+            
+            // ==========================================
+            // PIE DE PÁGINA
+            // ==========================================
+            
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                
+                // Línea decorativa
+                doc.setDrawColor(...azulOscuro);
+                doc.setLineWidth(0.5);
+                doc.line(15, doc.internal.pageSize.height - 20, 195, doc.internal.pageSize.height - 20);
+                
+                // Información del pie
+                doc.setFontSize(9);
+                doc.setTextColor(100, 100, 100);
+                doc.setFont(undefined, 'normal');
+                doc.text(
+                    `Generado: ${hoy.toLocaleDateString('es-ES')} ${hoy.toLocaleTimeString('es-ES')}`,
+                    15,
+                    doc.internal.pageSize.height - 12
+                );
+                doc.text(
+                    `Página ${i} de ${pageCount}`,
+                    195,
+                    doc.internal.pageSize.height - 12,
+                    { align: 'right' }
+                );
+            }
+            
+            // ==========================================
+            // GUARDAR PDF
+            // ==========================================
+            
+            const nombreArchivo = `Reporte_${mesActual.replace(' ', '_')}.pdf`;
+            doc.save(nombreArchivo);
+            
+            console.log('✅ PDF generado exitosamente:', nombreArchivo);
+            // Notificación que no bloquea la descarga
+
+            
+        } catch (error) {
+            console.error('❌ Error detallado al generar PDF:', error);
+            alert('Error al generar PDF: ' + error.message);
+        }
+    }
+
+    function mostrarModalConfirmacion(titulo, mensaje, textoNo, textoSi) {
+        return new Promise((resolve) => {
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.8);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 999999;
+            `;
+            
+            modal.innerHTML = `
+                <div style="background: white; padding: 40px; border-radius: 20px; max-width: 500px; text-align: center;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 4rem; color: #f39c12; margin-bottom: 20px;"></i>
+                    <h2 style="color: #333; margin-bottom: 15px;">${titulo}</h2>
+                    <p style="color: #666; font-size: 1.1rem; margin-bottom: 30px;">${mensaje}</p>
+                    <div style="display: flex; gap: 15px; justify-content: center;">
+                        <button id="btnNo" class="btn btn-secondary" style="padding: 12px 30px;">
+                            <i class="fas fa-times"></i> ${textoNo}
+                        </button>
+                        <button id="btnSi" class="btn btn-danger" style="padding: 12px 30px;">
+                            <i class="fas fa-check"></i> ${textoSi}
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            document.getElementById('btnNo').onclick = () => {
+                modal.remove();
+                resolve(false);
+            };
+            
+            document.getElementById('btnSi').onclick = () => {
+                modal.remove();
+                resolve(true);
+            };
+        });
     }
     </script>
 </body>
