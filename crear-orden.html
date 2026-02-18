@@ -6,6 +6,8 @@
     <title>Crear Orden de Producción - REG Marketing</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/@supabase/supabase-js@2.39.0/dist/umd/supabase.js"></script>
+    <script src="database.js"></script>
     <style>
         .upload-area {
             border: 3px dashed #2196F3;
@@ -398,7 +400,7 @@
         });
 
         // Manejar envío del formulario
-        document.getElementById('ordenForm').addEventListener('submit', function(e) {
+        document.getElementById('ordenForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const total = parseInt(document.getElementById('totalPrendas').textContent);
@@ -444,13 +446,8 @@
                 }
             };
 
-            // Guardar en localStorage
-            let ordenes = JSON.parse(localStorage.getItem('ordenes') || '[]');
-            ordenes.push(orden);
-            localStorage.setItem('ordenes', JSON.stringify(ordenes));
-
-            // Notificación
-            mostrarNotificacion('✅ Orden creada exitosamente: ' + orden.numeroOrden, 'success');
+           // Guardar en Supabase
+            guardarOrdenEnSupabase(orden);
             
             // Limpiar formulario
             setTimeout(() => {
@@ -480,6 +477,102 @@
                 notif.style.animation = 'slideOut 0.3s ease';
                 setTimeout(() => notif.remove(), 300);
             }, 3000);
+        }
+
+        async function guardarOrdenEnSupabase(orden) {
+            try {
+                // Mostrar que está guardando
+                mostrarNotificacion('⏳ Guardando orden en la nube...', 'info');
+                
+                // Guardar en Supabase
+                const resultado = await window.DB.crearOrden(orden);
+                
+                if (resultado.success) {
+                    // Éxito
+                    mostrarNotificacion('✅ Orden creada y guardada en la nube: ' + orden.numeroOrden, 'success');
+                    
+                    // También guardar en localStorage como respaldo
+                    let ordenes = JSON.parse(localStorage.getItem('ordenes') || '[]');
+                    ordenes.push(orden);
+                    localStorage.setItem('ordenes', JSON.stringify(ordenes));
+                    
+                    // Redirigir al dashboard después de 2 segundos
+                    // Redirigir al dashboard después de 2 segundos
+                    setTimeout(() => {
+                        // Modal bonito
+                        const modal = document.createElement('div');
+                        modal.style.cssText = `
+                            position: fixed;
+                            top: 0;
+                            left: 0;
+                            width: 100%;
+                            height: 100%;
+                            background: rgba(0,0,0,0.8);
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            z-index: 99999;
+                        `;
+                        
+                        modal.innerHTML = `
+                            <div style="background: white; padding: 40px; border-radius: 20px; max-width: 500px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+                                <i class="fas fa-check-circle" style="font-size: 4rem; color: #4CAF50; margin-bottom: 20px;"></i>
+                                <h2 style="color: #333; margin-bottom: 15px;">¡Orden creada exitosamente!</h2>
+                                <p style="color: #666; font-size: 1.1rem; margin-bottom: 30px;">
+                                    ¿Deseas ir al Dashboard para ver la orden?
+                                </p>
+                                <div style="display: flex; gap: 15px; justify-content: center;">
+                                    <button id="btnQuedarse" class="btn btn-secondary" style="padding: 12px 30px;">
+                                        <i class="fas fa-plus"></i> Crear Otra
+                                    </button>
+                                    <button id="btnIrDashboard" class="btn btn-success" style="padding: 12px 30px;">
+                                        <i class="fas fa-tv"></i> Ir al Dashboard
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                        
+                        document.body.appendChild(modal);
+                        
+                        document.getElementById('btnQuedarse').onclick = () => {
+                            modal.remove();
+                            limpiarFormulario();
+                        };
+                        
+                        document.getElementById('btnIrDashboard').onclick = () => {
+                            window.location.href = 'dashboard-jefe.html';
+                        };
+                    }, 2000);
+                    
+                } else {
+                    // Error de Supabase - guardar solo local
+                    console.error('Error Supabase:', resultado.error);
+                    
+                    let ordenes = JSON.parse(localStorage.getItem('ordenes') || '[]');
+                    ordenes.push(orden);
+                    localStorage.setItem('ordenes', JSON.stringify(ordenes));
+                    
+                    mostrarNotificacion('⚠️ Guardado localmente (sin conexión a internet)', 'warning');
+                    
+                    setTimeout(() => {
+                        limpiarFormulario();
+                    }, 2000);
+                }
+                
+            } catch (error) {
+                // Error total - modo offline
+                console.error('Error al guardar:', error);
+                
+                let ordenes = JSON.parse(localStorage.getItem('ordenes') || '[]');
+                ordenes.push(orden);
+                localStorage.setItem('ordenes', JSON.stringify(ordenes));
+                
+                mostrarNotificacion('⚠️ Modo offline: Orden guardada localmente', 'warning');
+                
+                setTimeout(() => {
+                    limpiarFormulario();
+                }, 2000);
+            }
         }
     </script>
 </body>
